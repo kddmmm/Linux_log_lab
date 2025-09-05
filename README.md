@@ -12,23 +12,12 @@ Ubuntu 환경에서 Docker 컨테이너들을 순차적으로 실행하며 시�
 
 - 이후 log를 통해 확인
 
-## 👥 구성원
-<table align="center">
-  <tr>
-    <td align="center">
-       <a href="https://github.com/kddmmm">
-        <img src="https://github.com/kddmmm.png" width="100px;" alt="kddmmm"/><br />
-        <sub><b>김동민</b></sub>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://github.com/kohtaewoo">
-        <img src="https://github.com/kohtaewoo.png" width="100px;" alt="kddmmm"/><br />
-        <sub><b>고태우</b></sub>
-      </a>
-    </td>
-  </tr>
-</table>
+## **👥 팀원 소개**
+
+| <img width="150px" src="https://avatars.githubusercontent.com/u/52108628?v=4"/> | <img width="150px" src="https://avatars.githubusercontent.com/u/76574412?v=4"/> |
+| --- | --- |
+| **고태우** | **김동민** |
+| [@kohtaewoo](https://github.com/kohtaewoo) | [@kddmmm](https://github.com/kddmmm) |
 
 ## 🛠 설치 방법
 
