@@ -2,15 +2,33 @@
 
 ## 📌 소개
 
-이 프로젝트는 Ubuntu 환경에서 Docker 컨테이너들을 순차적으로 실행하며 시스템/컨테이너 리소스 사용량을 주기적으로 기록하고, 부하가 점진적으로 증가하다가 스파이크 후 자동 안정화되는 패턴을 metrics.log에 저장합니다.
+Ubuntu 환경에서 Docker 컨테이너들을 순차적으로 실행하며 시스템/컨테이너 리소스 사용량을 주기적으로 기록하고, 부하가 점진적으로 증가하다가 스파이크 후 자동 안정화되는 패턴을 metrics.log에 저장합니다.
 
-매 1분마다 로그 수집
+- 매 1분마다 로그 수집
 
-2분 간격으로 컨테이너 2개 실행
+- 2분 간격으로 컨테이너 2개 실행
 
-각 컨테이너는 10분 후 자동 종료
+- 각 컨테이너는 10분 후 자동 종료
 
-이후 log를 통해 확인
+- 이후 log를 통해 확인
+
+## 👥 구성원
+<table align="center">
+  <tr>
+    <td align="center">
+       <a href="https://github.com/kddmmm">
+        <img src="https://github.com/kddmmm.png" width="100px;" alt="kddmmm"/><br />
+        <sub><b>김동민</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/kohtaewoo">
+        <img src="https://github.com/kohtaewoo.png" width="100px;" alt="kddmmm"/><br />
+        <sub><b>고태우</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## 🛠 설치 방법
 
@@ -30,9 +48,9 @@ newgrp docker
 
 ### 3. 네트워크 설정
 
-VM 네트워크를 브릿지 모드로 설정
+- VM 네트워크를 브릿지 모드로 설정
 
-IP 확인 및 방화벽/포트 설정 (필요 시 MobaXterm 접속용)
+- IP 확인 및 방화벽/포트 설정 (필요 시 MobaXterm 접속용)
 
 ### 4. docker 컨테이너
 
@@ -58,24 +76,39 @@ docker run -d --name cache --network $NETWORK_NAME redis:latest
 bash /home/ubuntu/docker_stress.sh
 ```
 
-2분 간격으로 컨테이너 2개 실행 (stress-1 ~ stress-2)
+- 2분 간격으로 컨테이너 2개 실행 (stress-1 ~ stress-2)
 
-각 컨테이너는 10분 후 자동 종료
+- 각 컨테이너는 10분 후 자동 종료
 
 ## ✨ 주요 기능
 
-1분 주기의 시스템 + 컨테이너 리소스 로깅
+- **주기적 자원 수집 (1분 간격)**
+  - 호스트 CPU(user+sys), idle, 메모리 총량/사용량/사용률 수집
+  - `docker stats --no-stream`로 컨테이너별 CPU%, 메모리% 수집
+  - 결과를 한 줄 레코드로 `/home/ubuntu/log/metrics.log`에 append
 
-계단형 부하 증가 → 스파이크 → 자동 안정화 시나리오
+- **부하 컨테이너 자동 실행 (2분 간격, 10분 후 자동 종료)**
+  - `stress-ng` 활용: `--cpu 1 --cpu-load 20 --vm 1 --vm-bytes 600M --vm-keep`
+  - 2개의 컨테이너(`stress-1`, `stress-2`)를 순차 실행하여 **계단형 부하 → 스파이크** 재현
+  - 컨테이너 메모리 제한(`-m 1g --memory-swap 1g`)으로 실사용 반영
 
-컨테이너별 부하 조절
+- **임계치 기반 레벨링(LEVEL)**
+  - 호스트/컨테이너 기준 경고·에러 임계치 비교
+    - `HOST_CPU_WARN`, `HOST_MEM_WARN`, `CONT_CPU_WARN`, `CONT_MEM_WARN`, `ESCALATE_ERROR`
+  - 라인 끝에 `LEVEL=INFO|WARN|ERROR` 표기
 
-앞 3개: CPU 20% 제한 + 600MB 메모리
+- **표준화된 로그 포맷**
+  - 예시:
+    ```
+    2025-09-05 14:51:01 CPU_user=80.8 CPU_sys=11.5 CPU_idle=0.0 MEM_used=1822MB MEM_percent=46.53 DOCKER_STATS=[stress-2|81.69%|622.1MiB / 1GiB|60.75%,stress-1|80.30%|622MiB / 1GiB|60.74%,cache|0.29%|4.37MiB / 3.82GiB|0.11%,web|0.00%|3.11MiB / 3.82GiB|0.08%] LEVEL=WARN
+    ```
+  - `DOCKER_STATS`는 `name|CPU%|MemUsage|Mem%`를 콤마로 나열
 
-마지막: CPU 최대 + 약 2.7GB 메모리
-
-10분 후 자동 종료 → 자연스러운 하강 그래프
-
+- **경량 분석 유틸**
+  - LEVEL별 필터: `awk -F'LEVEL=' ...`
+  - 최근 상위 CPU 컨테이너: `tail -n 10 ... | tr ',' '\n' | sort -k2 -nr`
+  - LEVEL 집계: `awk -F'LEVEL=' '... END{for(k in cnt) print k,cnt[k]}'`
+  - ERROR 구간 CPU 평균: `awk -F'[ =]+' '... END{printf "...",sum/n}'`
 
 ## ⚙️ 사용 shell script
 
